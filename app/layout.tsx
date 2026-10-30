@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Instrument_Serif, Manrope } from "next/font/google";
+import TransitionProvider from "@/Provider/transitionProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const instrument = Instrument_Serif({subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-instrument",});
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// <body> className:
+// `${instrument.variable} ${manrope.variable} bg-[#F7F7F5] font-[family-name:var(--font-manrope)] text-[#1F2326]`
+// wrap {children} with <TransitionProvider>
+
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -21,9 +21,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+ <TransitionProvider>{children}</TransitionProvider>
+      </body>
     </html>
   );
 }
