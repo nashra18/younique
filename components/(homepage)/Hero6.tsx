@@ -382,7 +382,6 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
       {/* Meta: sabse halka */}
       <div className="flex items-center justify-between font-[family-name:var(--font-manrope)] text-[11px] font-medium uppercase tracking-[0.18em] text-[#1F2326]/50">
         <span data-fade className="invisible">Collection 01</span>
-        <span data-fade className="invisible">FW / 26</span>
       </div>
 
       {/* Text zone */}

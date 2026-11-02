@@ -9,6 +9,17 @@ import Preloader from "@/components/(homepage)/PreLoader";
 const DOME_VH = 14;
 const travel = () => window.innerHeight * (1 + DOME_VH / 100 + 0.02);
 
+// Routes that never show the curtain (going to them OR leaving them)
+const NO_TRANSITION = ["/wishlist", "/cart"];
+
+const skip = (from?: string, to?: string) => {
+  const hit = (p?: string) => {
+    const path = (p ?? "").split("?")[0].split("#")[0];
+    return NO_TRANSITION.some((r) => path === r || path.startsWith(`${r}/`));
+  };
+  return hit(from) || hit(to);
+};
+
 export default function TransitionProvider({ children }: { children: ReactNode }) {
   const curtainRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
@@ -23,7 +34,13 @@ export default function TransitionProvider({ children }: { children: ReactNode }
 
       <TransitionRouter
         auto
-        leave={(next) => {
+        leave={(next, from, to) => {
+          // wishlist / bag: go straight there, no curtain
+          if (skip(from, to)) {
+            next();
+            return;
+          }
+
           const curtain = curtainRef.current!;
           const line = lineRef.current!;
           const l = letters();
@@ -43,7 +60,13 @@ export default function TransitionProvider({ children }: { children: ReactNode }
 
           return () => tl.kill();
         }}
-        enter={(next) => {
+        enter={(next, from, to) => {
+          // must match leave(): if the curtain was skipped, skip the reveal too
+          if (skip(from, to)) {
+            next();
+            return;
+          }
+
           const curtain = curtainRef.current!;
           const line = lineRef.current!;
           const l = letters();
