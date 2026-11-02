@@ -6,9 +6,9 @@ export const BRAND = {
 
 
 export const PRELOADER_IMAGES = [
-  "/streetwear/streetwearg2.jpg",
-  "/streetwear/streetwearb1.jpg",
+  "/streetwear/streetwear2.jpg",
+  "/streetwear/streetwear1.jpg",
   "/tailored/tailored1.jpg",
-  "/recycled/recycled2.jpg",
-  "/tailored/tailored5.jpg",
+  "/recycled/recycled3.jpg",
+  "/tailored/tailored6.jpg",
 ];

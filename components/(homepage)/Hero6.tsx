@@ -2,30 +2,35 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import gsap from "gsap";
 import { PRODUCTS } from "@/data/ShopData";
 
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-// NOTE: leading "/" zaroori hai, warna sirf "/" page par chalega. File public/Brand-logo/ me honi chahiye.
+// Leading "/" zaroori hai. Files public/Brand-logo/ me honi chahiye.
 const HERO_MOBILE = "/Brand-logo/youniquehero-phone.jpg"; // ~1080x1440
 const HERO_DESKTOP = "/Brand-logo/youniquehero-desktop.jpg"; // ~2400x1300
 const HERO_POSITION = "50% 30%";
 
-// Counts now come from your real products (lib/shop-data.ts)
+// Shop ka page: app/shop/page.tsx
+const SHOP_PATH = "/shop";
+
 const countOf = (c: string) => PRODUCTS.filter((p) => p.category === c).length;
 
 const CATS = [
-  { name: "Streetwear", blurb: "Oversized cuts, everyday attitude.", count: countOf("streetwear"), category: "streetwear", href: "/?category=streetwear#shop" },
-  { name: "Recycled", blurb: "Reclaimed fabric, one of one.", count: countOf("recycled"), category: "recycled", href: "/?category=recycled#shop" },
-  { name: "Tailored", blurb: "Sharp fits, made to be worn in.", count: countOf("tailored"), category: "tailored", href: "/?category=tailored#shop" },
+  { name: "Streetwear", blurb: "Oversized cuts, everyday attitude.", count: countOf("streetwear"), category: "streetwear", href: `${SHOP_PATH}?category=streetwear#shop` },
+  { name: "Recycled", blurb: "Reclaimed fabric, one of one.", count: countOf("recycled"), category: "recycled", href: `${SHOP_PATH}?category=recycled#shop` },
+  { name: "Tailored", blurb: "Sharp fits, made to be worn in.", count: countOf("tailored"), category: "tailored", href: `${SHOP_PATH}?category=tailored#shop` },
 ];
 
 const START = 1; // pehle kaunsa khula ho
 const GROW = 3; // khule panel ki relative size (baaki = 1)
 const AUTOPLAY = 5; // seconds
+
+// Page change ke baad wapas aane par intro dobara chhota chale, 9 second ka khali gap na aaye
+let heroSeen = false;
 
 const imgCls = "absolute inset-0 h-full w-full object-cover";
 
@@ -62,14 +67,26 @@ function Word({ text, italic = false }: { text: string; italic?: boolean }) {
 export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: boolean }) {
   const root = useRef<HTMLElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
-  // Opens the shop section with the chosen filter, without a page reload
+  // Shop button / panels: agar #shop isi page par hai to scroll, warna /shop page par jao
   const goShop = (e: React.MouseEvent, category: string) => {
-    if (e.defaultPrevented) return; // first tap on a phone only opens the panel
+    if (e.defaultPrevented) return; // phone par pehla tap sirf panel kholta hai
     e.preventDefault();
-    router.replace(`/?category=${category}`, { scroll: false });
-    document.getElementById("shop")?.scrollIntoView({ behavior: "smooth" });
+    const qs = category === "all" ? "" : `?category=${category}`;
+    const here = document.getElementById("shop");
+    if (here) {
+      router.replace(`${pathname}${qs}`, { scroll: false });
+      here.scrollIntoView({ behavior: "smooth" });
+    } else {
+      router.push(`${SHOP_PATH}${qs}#shop`);
+    }
   };
+
+  // Shop page pehle se load kar lo, click par turant khule
+  useEffect(() => {
+    router.prefetch(SHOP_PATH);
+  }, [router]);
 
   useIsoLayoutEffect(() => {
     const el = root.current;
@@ -100,9 +117,9 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
       const onames = slats.map((s) => s.querySelector("[data-oname]") as HTMLElement);
       const ometas = slats.map((s) => Array.from(s.querySelectorAll<HTMLElement>("[data-ometa]")));
 
-      // ---- ek hi state se layout + colour window chalta hai: koi layout read nahi, koi lag nahi
+      // ---- ek hi state se layout + colour window chalta hai
       const A = { a0: 0, a1: 0, a2: 0 };
-      const R = { r: 0 }; // colour bloom (intro) alag object: hover isko kabhi kill nahi karega
+      const R = { r: 0 }; // colour bloom (intro)
       (A as Record<string, number>)[`a${START}`] = 1;
       const keys = ["a0", "a1", "a2"] as const;
 
@@ -158,11 +175,11 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
       const showOpen = (k: number) => {
         gsap.killTweensOf([opens[k], onames[k], ...ometas[k]]);
         gsap.set(opens[k], { autoAlpha: 1 });
-        gsap.fromTo(onames[k], { yPercent: 115 }, { yPercent: 0, duration: 1.2, ease: "power4.out", delay: 0.45 });
+        gsap.fromTo(onames[k], { yPercent: 115 }, { yPercent: 0, duration: 1.1, ease: "power4.out", delay: 0.4 });
         gsap.fromTo(
           ometas[k],
           { y: 12, autoAlpha: 0 },
-          { y: 0, autoAlpha: 1, duration: 0.9, ease: "power3.out", delay: 0.6, stagger: 0.1 }
+          { y: 0, autoAlpha: 1, duration: 0.9, ease: "power3.out", delay: 0.55, stagger: 0.1 }
         );
         gsap.to(closeds[k], { autoAlpha: 0, duration: 0.25, overwrite: true });
       };
@@ -214,7 +231,7 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
           a0: i === 0 ? 1 : 0,
           a1: i === 1 ? 1 : 0,
           a2: i === 2 ? 1 : 0,
-          duration: reduce ? 0.01 : 1.5,
+          duration: reduce ? 0.01 : 1.4,
           ease: "power3.inOut",
           overwrite: "auto",
           onUpdate: render,
@@ -288,6 +305,17 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
       );
       io.observe(el);
 
+      const teardown = () => {
+        progTw?.kill();
+        touchResume?.kill();
+        box.removeEventListener("pointerenter", hoverIn);
+        box.removeEventListener("pointerleave", hoverOut);
+        box.removeEventListener("touchstart", touchStart);
+        mqV.removeEventListener("change", render);
+        io.disconnect();
+        cleanups.forEach((fn) => fn());
+      };
+
       // ---- reduced motion: sab seedha dikhao
       if (reduce) {
         R.r = 1;
@@ -296,14 +324,7 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
         gsap.set(rule, { autoAlpha: 1, scaleX: 1 });
         closeds.forEach((c, k) => gsap.set(c, { autoAlpha: k === cur ? 0 : 1 }));
         showOpen(cur);
-        return () => {
-          box.removeEventListener("pointerenter", hoverIn);
-          box.removeEventListener("pointerleave", hoverOut);
-          box.removeEventListener("touchstart", touchStart);
-          mqV.removeEventListener("change", render);
-          io.disconnect();
-          cleanups.forEach((fn) => fn());
-        };
+        return teardown;
       }
 
       // ---- initial state (intro se pehle)
@@ -323,11 +344,11 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
 
       const tl = gsap.timeline({ paused: true });
       tl
-        // 1) image pehle: neeche se upar wipe + settle zoom, phir slow zoom (ek hi timeline = koi fight nahi)
+        // 1) image pehle: neeche se upar wipe + settle zoom, phir slow zoom
         .to(frame, { clipPath: "inset(0% 0% 0% 0%)", duration: 1.9, ease: "expo.inOut" }, 0)
         .to(zooms, { scale: 1, duration: 2.8, ease: "power3.out" }, 0)
         .to(zooms, { scale: 1.06, duration: 26, ease: "sine.inOut" }, 2.8)
-        // 2) headline: letters dheere, ek soft wave me
+        // 2) headline: letters ek soft wave me
         .to(
           letters,
           {
@@ -355,8 +376,16 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
         }, 3.1)
         .add(() => {
           live = true;
+          heroSeen = true;
           runProg();
         }, 4.2);
+
+      // Wapas aane par (ya preloader pehle ho chuka ho) intro ka wait nahi
+      const revisit = heroSeen;
+      const preloaderDone =
+        (window as unknown as { __preloaderDone?: boolean }).__preloaderDone === true;
+      const skipWait = revisit || preloaderDone || !waitForPreloader;
+      if (revisit) tl.timeScale(1.6);
 
       let started = false;
       const go = () => {
@@ -364,25 +393,19 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
         started = true;
         tl.play();
       };
-      if (waitForPreloader) {
+
+      if (!skipWait) {
         window.addEventListener("preloader:reveal", go, { once: true });
         const t = window.setTimeout(go, 9000);
         cleanups.push(() => {
           window.removeEventListener("preloader:reveal", go);
           window.clearTimeout(t);
         });
-      } else go();
+      } else {
+        go();
+      }
 
-      return () => {
-        progTw?.kill();
-        touchResume?.kill();
-        box.removeEventListener("pointerenter", hoverIn);
-        box.removeEventListener("pointerleave", hoverOut);
-        box.removeEventListener("touchstart", touchStart);
-        mqV.removeEventListener("change", render);
-        io.disconnect();
-        cleanups.forEach((fn) => fn());
-      };
+      return teardown;
     }, el);
 
     return () => ctx.revert();
@@ -417,10 +440,10 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
             ))}
           </p>
           <div className="flex items-center gap-6 font-[family-name:var(--font-manrope)]">
-            {/* Blue sirf CTA me: opens New arrivals in the shop section */}
+            {/* Blue sirf CTA me: New arrivals ke saath shop page kholta hai */}
             <a
               data-cta
-              href="/?category=new#shop"
+              href={`${SHOP_PATH}?category=new#shop`}
               onClick={(e) => goShop(e, "new")}
               className="group invisible relative inline-flex items-center gap-3 overflow-hidden bg-[#B7C9D6] px-7 py-4 text-[12px] font-bold uppercase tracking-[0.18em] text-[#1F2326]"
             >
@@ -444,7 +467,7 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
         data-box
         className="relative mt-5 h-[66svh] min-h-0 md:mt-3 md:h-auto md:flex-1"
       >
-        {/* Images: kabhi move nahi karti, sirf upar ka colour window slide hota hai */}
+        {/* Images kabhi move nahi karti, sirf upar ka colour window slide hota hai */}
         <div data-frame className="invisible absolute inset-0 overflow-hidden bg-[#E5E7EA]">
           {/* Dull base */}
           <div className="absolute inset-0 grayscale brightness-[0.78] contrast-[0.88]">
@@ -462,7 +485,7 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1F2326]/70 via-[#1F2326]/10 to-transparent" />
         </div>
 
-        {/* Panels (clickable): each opens the shop with its filter */}
+        {/* Panels (clickable): har ek shop ko apne filter ke saath kholta hai */}
         {CATS.map((c, i) => (
           <a
             key={c.name}
@@ -470,7 +493,7 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
             href={c.href}
             onClick={(e) => goShop(e, c.category)}
             aria-label={`${c.name}, ${c.count} pieces`}
-            className="group absolute block outline-none focus-visible:ring-2 focus-visible:ring-[#B7C9D6]"
+            className="group absolute block outline-none will-change-[left,top,width,height] focus-visible:ring-2 focus-visible:ring-[#B7C9D6]"
           >
             {/* divider (page bg ka rang) */}
             {i > 0 && (
@@ -481,7 +504,6 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
             )}
 
             <div className="absolute inset-0 overflow-hidden">
-
               {/* Closed: chhota label */}
               <span
                 data-closed
