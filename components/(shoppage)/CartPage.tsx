@@ -158,7 +158,7 @@ export default function CartPage() {
             <p className="mt-2 text-[12px] text-[#1F2326]/55">You save {inr(saved)} on this order.</p>
 
             <Link
-              href="/checkout"
+              href="/"
               className="group relative mt-6 flex w-full items-center justify-center overflow-hidden bg-[#B7C9D6] px-6 py-4 text-[13px] font-bold tracking-wide text-[#1F2326] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F2326] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F7F5]"
             >
               <span className="absolute inset-0 origin-bottom scale-y-0 bg-[#1F2326] transition-transform duration-500 ease-[cubic-bezier(.7,0,.2,1)] group-hover:scale-y-100" />

@@ -25,7 +25,7 @@ const FILTERS = [
 const MENU_LINKS = [
   { label: "New in", href: "/shop?category=new" },
   { label: "Best sellers", href: "/shop?category=best" },
-  { label: "Our story", href: "/#story" }, // change when you build a story page
+  { label: "Our story", href: "/" }, // change when you build a story page
 ];
 
 const MENU_FOOTER = [

@@ -10,19 +10,39 @@ import ProductCard from "./ProductCard";
 const manrope = "font-[family-name:var(--font-manrope)]";
 const instrument = "font-[family-name:var(--font-instrument)]";
 
-const SUGGESTIONS = ["Oversized tee", "Cargo", "Blazer", "Jacket", "Denim", "Linen"];
+// Sab ShopData ke real product names se aate hain (har ek ka kam se kam 1 result hai)
+const SUGGESTIONS = ["Jacket", "Denim", "Blazer", "Hoodie", "Dress", "Skirt", "Corset", "Jeans"];
+
+// "Wide-Leg" -> "wide leg", extra spaces hata do
+const normalize = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+// "jackets" -> "jacket" (chhote words ko mat chhedo)
+const stem = (w: string) => (w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w);
 
 function SearchContent() {
   const params = useSearchParams();
   const q = (params.get("q") ?? "").trim();
 
   const results = useMemo(() => {
-    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    const phrase = normalize(q);
+    const words = phrase.split(" ").filter(Boolean).map(stem);
     if (words.length === 0) return [];
-    return PRODUCTS.filter((p) => {
-      const hay = `${p.name} ${p.description} ${CATEGORY_LABEL[p.category]}`.toLowerCase();
-      return words.every((w) => hay.includes(w)); // every word must match
-    });
+
+    return PRODUCTS.map((p) => {
+      const name = normalize(p.name);
+      const hay = `${name} ${normalize(CATEGORY_LABEL[p.category])}`;
+      if (!words.every((w) => hay.includes(w))) return null;
+
+      // Score: poora phrase name me ho to sabse upar, phir name me starts-with
+      let score = 1;
+      if (name.includes(phrase)) score += 2;
+      if (name.startsWith(words[0])) score += 1;
+      return { p, score };
+    })
+      .filter((x): x is { p: (typeof PRODUCTS)[number]; score: number } => x !== null)
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.p);
   }, [q]);
 
   return (
@@ -49,7 +69,9 @@ function SearchContent() {
             {q ? "No pieces match that search" : "What are you looking for?"}
           </p>
           <p className={`${manrope} mt-3 text-[15px] leading-relaxed text-[#1F2326]/60`}>
-            {q ? "Check the spelling or try a shorter word. These searches work well:" : "Use the search icon in the header, or try one of these:"}
+            {q
+              ? "Check the spelling or try a shorter word. These searches work well:"
+              : "Use the search icon in the header, or try one of these:"}
           </p>
           <div className={`${manrope} mt-6 flex flex-wrap gap-2`}>
             {SUGGESTIONS.map((s) => (

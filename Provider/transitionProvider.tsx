@@ -9,6 +9,13 @@ import Preloader from "@/components/(homepage)/PreLoader";
 const DOME_VH = 14;
 const travel = () => window.innerHeight * (1 + DOME_VH / 100 + 0.02);
 
+// Shared state: hero / navbar isse jaan lete hain ki curtain abhi kya kar raha hai
+//   "covering"  -> curtain page ko dhak raha hai (naya page uske peeche load ho raha hai)
+//   "revealing" -> curtain uthna shuru ho gaya (event: preloader:reveal)
+//   undefined   -> koi curtain nahi
+type CurtainWindow = Window & { __curtain?: "covering" | "revealing" };
+const cw = () => window as CurtainWindow;
+
 // Routes that never show the curtain (going to them OR leaving them)
 const NO_TRANSITION = ["/wishlist", "/cart"];
 
@@ -30,6 +37,7 @@ export default function TransitionProvider({ children }: { children: ReactNode }
 
   return (
     <>
+      {/* Photos wala preloader: sirf site khulte waqt, ek hi baar (ye layout me rehta hai, dobara mount nahi hota) */}
       <Preloader />
 
       <TransitionRouter
@@ -37,6 +45,7 @@ export default function TransitionProvider({ children }: { children: ReactNode }
         leave={(next, from, to) => {
           // wishlist / bag: go straight there, no curtain
           if (skip(from, to)) {
+            cw().__curtain = undefined;
             next();
             return;
           }
@@ -44,6 +53,8 @@ export default function TransitionProvider({ children }: { children: ReactNode }
           const curtain = curtainRef.current!;
           const line = lineRef.current!;
           const l = letters();
+
+          cw().__curtain = "covering";
 
           const tl = gsap.timeline({ onComplete: next });
 
@@ -61,8 +72,9 @@ export default function TransitionProvider({ children }: { children: ReactNode }
           return () => tl.kill();
         }}
         enter={(next, from, to) => {
-          // must match leave(): if the curtain was skipped, skip the reveal too
-          if (skip(from, to)) {
+          // Reveal sirf tab jab leave() ne curtain dhaka ho (first load / back button par nahi)
+          if (skip(from, to) || cw().__curtain !== "covering") {
+            cw().__curtain = undefined;
             next();
             return;
           }
@@ -74,13 +86,19 @@ export default function TransitionProvider({ children }: { children: ReactNode }
           const tl = gsap.timeline({
             onComplete: () => {
               gsap.set(curtain, { autoAlpha: 0 });
+              cw().__curtain = undefined;
               next();
             },
           });
 
           tl.to(l, { yPercent: -115, rotate: -5, duration: 0.6, ease: "expo.in", stagger: 0.025 }, 0.1)
             .to(line, { scaleX: 0, transformOrigin: "100% 50%", duration: 0.5, ease: "expo.in" }, 0.1)
-            .to(curtain, { y: -travel(), duration: 1, ease: "expo.inOut" }, 0.45);
+            .to(curtain, { y: -travel(), duration: 1, ease: "expo.inOut" }, 0.45)
+            // curtain uthte hi hero / navbar apni animation shuru karein
+            .add(() => {
+              cw().__curtain = "revealing";
+              window.dispatchEvent(new Event("preloader:reveal"));
+            }, 0.55);
 
           return () => tl.kill();
         }}

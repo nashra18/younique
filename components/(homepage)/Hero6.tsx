@@ -453,7 +453,7 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
             </a>
             <Link
               data-cta
-              href="/our-story"
+              href="/"
               className="invisible text-[12px] font-medium uppercase tracking-[0.18em] text-[#1F2326]/55 underline decoration-[#1F2326]/20 underline-offset-8 transition-colors hover:text-[#1F2326] hover:decoration-[#1F2326]"
             >
               Our story
