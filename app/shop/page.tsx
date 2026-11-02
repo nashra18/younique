@@ -10,7 +10,7 @@ export default function Page() {
       <main>
         {/* Suspense is required because ShopPage reads ?category= from the URL */}
         <Suspense fallback={null}>
-            <Navbar />
+            
           <ShopItems />
         </Suspense>
       </main>

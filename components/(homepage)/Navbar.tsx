@@ -12,6 +12,9 @@ import { useShop } from "@/components/(shoppage)/ShopProvider"; // adjust path i
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
+// Entrance animation sirf pehli baar (site khulte waqt). Page change par navbar turant dikhta hai.
+let navSeen = false;
+
 // Streetwear / Recycled / Tailored are filters of the Shop page
 const FILTERS = [
   { label: "Streetwear", href: "/shop?category=streetwear" },
@@ -52,7 +55,7 @@ export default function Navbar({
 }: {
   waitForPreloader?: boolean;
 }) {
-  // counts now come from the shared shop state (wishlist + bag)
+  // counts come from the shared shop state (wishlist + bag)
   const { cartCount, wishlistCount } = useShop();
 
   const router = useRouter();
@@ -62,68 +65,54 @@ export default function Navbar({
   const [searching, setSearching] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [query, setQuery] = useState("");
-  const lockRef = useRef(false);
 
-  useEffect(() => {
-    lockRef.current = open || searching;
-  }, [open, searching]);
-
-  // ---- entrance (same trigger as the hero)
+  // ---- entrance: sirf pehli baar. Baaki sab pages par navbar turant (paint se pehle) dikhta hai.
   useIsoLayoutEffect(() => {
     const el = root.current;
     if (!el) return;
+
+    const items = gsap.utils.toArray<HTMLElement>("[data-nav-in]", el);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const preloaderDone =
+      (window as unknown as { __preloaderDone?: boolean }).__preloaderDone === true;
+
+    if (reduce || navSeen || preloaderDone) {
+      gsap.set(items, { autoAlpha: 1, y: 0 });
+      navSeen = true;
+      return;
+    }
 
     const ctx = gsap.context(() => {
-      const items = gsap.utils.toArray<HTMLElement>("[data-nav-in]", el);
-      if (reduce) {
-        gsap.set(items, { autoAlpha: 1, y: 0 });
-        return;
-      }
       gsap.set(items, { autoAlpha: 0, y: -12 });
       const tl = gsap.timeline({ paused: true });
-      tl.to(items, { y: 0, autoAlpha: 1, duration: 1, ease: "power3.out", stagger: 0.06 }, 0);
+      tl.to(items, { y: 0, autoAlpha: 1, duration: 0.9, ease: "power3.out", stagger: 0.06 }, 0);
 
       let started = false;
       const go = () => {
         if (started) return;
         started = true;
+        navSeen = true;
         tl.play();
       };
+
       if (waitForPreloader) {
         window.addEventListener("preloader:reveal", go, { once: true });
-        const t = window.setTimeout(go, 9000);
+        const t = window.setTimeout(go, 5000); // preloader na ho to navbar zyada der gayab na rahe
         return () => {
           window.removeEventListener("preloader:reveal", go);
           window.clearTimeout(t);
         };
-      } else go();
+      }
+      go();
     }, el);
 
     return () => ctx.revert();
   }, [waitForPreloader]);
 
-  // ---- hide on scroll down, show on scroll up (navbar only)
+  // ---- navbar hamesha dikhta hai: sirf scroll par neeche ki border aati hai
   useEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    let last = window.scrollY;
-    let hidden = false;
-
-    const onScroll = () => {
-      const y = window.scrollY;
-      setScrolled(y > 10);
-      const goingDown = y > last && y > 160;
-      if (!lockRef.current && goingDown && !hidden) {
-        hidden = true;
-        gsap.to(el, { yPercent: -100, duration: 0.5, ease: "power3.out", overwrite: "auto" });
-      } else if ((y < last || y <= 160 || lockRef.current) && hidden) {
-        hidden = false;
-        gsap.to(el, { yPercent: 0, duration: 0.5, ease: "power3.out", overwrite: "auto" });
-      }
-      last = y;
-    };
-
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
