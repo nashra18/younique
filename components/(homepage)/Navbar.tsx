@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import Logo from "@/components/(homepage)/Logo";
 import PromoBar from "@/components/(homepage)/Promobar";
+import { useShop } from "@/components/(shoppage)/ShopProvider"; // adjust path if yours differs
 
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -19,14 +20,15 @@ const FILTERS = [
 ];
 
 const MENU_LINKS = [
-  { label: "New in", href: "/new-in" },
-  { label: "Our story", href: "/our-story" },
+  { label: "New in", href: "/shop?category=new" },
+  { label: "Best sellers", href: "/shop?category=best" },
+  { label: "Our story", href: "/#story" }, // change when you build a story page
 ];
 
 const MENU_FOOTER = [
-  { label: "Account", href: "/account" },
   { label: "Wishlist", href: "/wishlist" },
-  { label: "Help", href: "/help" },
+  { label: "Bag", href: "/cart" },
+  { label: "Search", href: "/search" },
 ];
 
 const POPULAR = ["Oversized tee", "Cargo", "Blazer", "Jacket"];
@@ -46,14 +48,13 @@ function Tip({ label }: { label: string }) {
 }
 
 export default function Navbar({
-  cartCount = 0,
-  wishlistCount = 0,
   waitForPreloader = true,
 }: {
-  cartCount?: number;
-  wishlistCount?: number;
   waitForPreloader?: boolean;
 }) {
+  // counts now come from the shared shop state (wishlist + bag)
+  const { cartCount, wishlistCount } = useShop();
+
   const router = useRouter();
   const root = useRef<HTMLElement>(null);
   const menu = useRef<HTMLDivElement>(null);

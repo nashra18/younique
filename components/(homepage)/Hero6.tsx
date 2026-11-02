@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import gsap from "gsap";
+import { PRODUCTS } from "@/data/ShopData";
 
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -11,11 +14,13 @@ const HERO_MOBILE = "/Brand-logo/youniquehero-phone.jpg"; // ~1080x1440
 const HERO_DESKTOP = "/Brand-logo/youniquehero-desktop.jpg"; // ~2400x1300
 const HERO_POSITION = "50% 30%";
 
-// Placeholder copy/counts: apne real data se badlo
+// Counts now come from your real products (lib/shop-data.ts)
+const countOf = (c: string) => PRODUCTS.filter((p) => p.category === c).length;
+
 const CATS = [
-  { name: "Streetwear", blurb: "Oversized cuts, everyday attitude.", count: 24, href: "#streetwear" },
-  { name: "Recycled", blurb: "Reclaimed fabric, one of one.", count: 18, href: "#recycled" },
-  { name: "Tailored", blurb: "Sharp fits, made to be worn in.", count: 15, href: "#tailored" },
+  { name: "Streetwear", blurb: "Oversized cuts, everyday attitude.", count: countOf("streetwear"), category: "streetwear", href: "/?category=streetwear#shop" },
+  { name: "Recycled", blurb: "Reclaimed fabric, one of one.", count: countOf("recycled"), category: "recycled", href: "/?category=recycled#shop" },
+  { name: "Tailored", blurb: "Sharp fits, made to be worn in.", count: countOf("tailored"), category: "tailored", href: "/?category=tailored#shop" },
 ];
 
 const START = 1; // pehle kaunsa khula ho
@@ -56,6 +61,15 @@ function Word({ text, italic = false }: { text: string; italic?: boolean }) {
 
 export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: boolean }) {
   const root = useRef<HTMLElement>(null);
+  const router = useRouter();
+
+  // Opens the shop section with the chosen filter, without a page reload
+  const goShop = (e: React.MouseEvent, category: string) => {
+    if (e.defaultPrevented) return; // first tap on a phone only opens the panel
+    e.preventDefault();
+    router.replace(`/?category=${category}`, { scroll: false });
+    document.getElementById("shop")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useIsoLayoutEffect(() => {
     const el = root.current;
@@ -379,16 +393,11 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
       ref={root}
       className="relative flex min-h-svh w-full flex-col bg-[#F7F7F5] px-4 pb-4 pt-4 text-[#1F2326] md:h-svh md:min-h-[700px] md:px-10 md:pb-8 md:pt-6"
     >
-      {/* Meta: sabse halka */}
-      <div className="flex items-center justify-between font-[family-name:var(--font-manrope)] text-[11px] font-medium uppercase tracking-[0.18em] text-[#1F2326]/50">
-        <span data-fade className="invisible">Collection 01</span>
-      </div>
-
       {/* Text zone */}
       <div className="-mt-1 grid items-end gap-5 md:-mt-3 md:grid-cols-[1fr_auto] md:gap-12">
         <h1
           aria-label="Be uniquely you."
-          className="font-[family-name:var(--font-instrument)] text-[clamp(58px,17vw,96px)] leading-[0.95] tracking-[-0.035em] md:pb-[0.24em] md:text-[clamp(80px,9.8vw,200px)] md:leading-[0.9]"
+          className="font-[family-name:var(--font-instrument)] text-[clamp(58px,17vw,96px)] leading-[0.95] tracking-[-0.035em] md:pb-[0.24em] md:text-[clamp(60px,7.8vw,180px)] md:leading-[0.9]"
         >
           <span aria-hidden>
             <Word text="Be" /> <Word text="uniquely" italic /> <Word text="you." />
@@ -408,23 +417,24 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
             ))}
           </p>
           <div className="flex items-center gap-6 font-[family-name:var(--font-manrope)]">
-            {/* Blue sirf CTA me */}
+            {/* Blue sirf CTA me: opens New arrivals in the shop section */}
             <a
               data-cta
-              href="#shop"
+              href="/?category=new#shop"
+              onClick={(e) => goShop(e, "new")}
               className="group invisible relative inline-flex items-center gap-3 overflow-hidden bg-[#B7C9D6] px-7 py-4 text-[12px] font-bold uppercase tracking-[0.18em] text-[#1F2326]"
             >
               <span className="absolute inset-0 origin-bottom scale-y-0 bg-[#1F2326] transition-transform duration-500 ease-[cubic-bezier(.7,0,.2,1)] group-hover:scale-y-100" />
               <span className="relative transition-colors duration-500 group-hover:text-[#B7C9D6]">Shop the drop</span>
               <span className="relative transition-all duration-500 group-hover:translate-x-1 group-hover:text-[#B7C9D6]">→</span>
             </a>
-            <a
+            <Link
               data-cta
-              href="#story"
+              href="/our-story"
               className="invisible text-[12px] font-medium uppercase tracking-[0.18em] text-[#1F2326]/55 underline decoration-[#1F2326]/20 underline-offset-8 transition-colors hover:text-[#1F2326] hover:decoration-[#1F2326]"
             >
               Our story
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -452,12 +462,13 @@ export default function Hero6({ waitForPreloader = true }: { waitForPreloader?: 
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1F2326]/70 via-[#1F2326]/10 to-transparent" />
         </div>
 
-        {/* Panels (clickable) */}
+        {/* Panels (clickable): each opens the shop with its filter */}
         {CATS.map((c, i) => (
           <a
             key={c.name}
             data-slat
             href={c.href}
+            onClick={(e) => goShop(e, c.category)}
             aria-label={`${c.name}, ${c.count} pieces`}
             className="group absolute block outline-none focus-visible:ring-2 focus-visible:ring-[#B7C9D6]"
           >
